@@ -16,22 +16,29 @@ class MoviesController < ApplicationController
     if params.has_key?(:ratings)
       @ratings = params[:ratings]
       @ratings = @ratings.keys if @ratings.respond_to?(:keys)
+      if @ratings.empty?.!
+        session[:ratings] = @ratings
+      end
     end
     
     if params.has_key?(:sort_by)
-      @sort_column = params[:sort_by]
+      session[:sort_by] = params[:sort_by]
     end
     
-    if (!(@sort_column.nil?) && !(@ratings.nil?))
-      @movies = Movie.(:all, order: session[:sort], conditions: ["rating IN (?)", @ratings])
-    elsif @sort_column.nil? && !(@ratings.nil?)
-      @movies = Movie.where(["rating IN (?)", @ratings])
-    elsif !(@sort_column.nil?) && @ratings.nil?
-      @movies = Movie.order(@sort_column)
+    if (!(session[:sort_by].nil?) && !(session[:ratings].nil?))
+      @movies = Movie.where(["rating IN (?)", session[:ratings]]).order(session[:sort_by])
+    elsif session[:sort_by].nil? && !(session[:ratings].nil?)
+      @movies = Movie.where(["rating IN (?)", session[:ratings]])
+    elsif !(session[:sort_by].nil?) && session[:ratings].nil?
+      @movies = Movie.order(session[:sort_by])
     else
       @movies = Movie.all
     end
     
+    if session[:ratings] != params[:ratings] || session[:sort_by] != params[:sort_by]
+      flash.keep
+      redirect_to movies_path(ratings: session[:ratings], sort_by: session[:sort_by])
+    end
  
   end
 
