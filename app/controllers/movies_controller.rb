@@ -1,5 +1,5 @@
 class MoviesController < ApplicationController
-
+  
   def movie_params
     params.require(:movie).permit(:title, :rating, :description, :release_date)
   end
@@ -11,8 +11,28 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @movies = Movie.order(params[:sort_by])
-    @sort_column = params[:sort_by]
+    @all_ratings = ['G', 'PG', 'PG-13', 'R']
+    
+    if params.has_key?(:ratings)
+      @ratings = params[:ratings]
+      @ratings = @ratings.keys if @ratings.respond_to?(:keys)
+    end
+    
+    if params.has_key?(:sort_by)
+      @sort_column = params[:sort_by]
+    end
+    
+    if (!(@sort_column.nil?) && !(@ratings.nil?))
+      @movies = Movie.(:all, order: session[:sort], conditions: ["rating IN (?)", @ratings])
+    elsif @sort_column.nil? && !(@ratings.nil?)
+      @movies = Movie.where(["rating IN (?)", @ratings])
+    elsif !(@sort_column.nil?) && @ratings.nil?
+      @movies = Movie.order(@sort_column)
+    else
+      @movies = Movie.all
+    end
+    
+ 
   end
 
   def new
@@ -42,5 +62,4 @@ class MoviesController < ApplicationController
     flash[:notice] = "Movie '#{@movie.title}' deleted."
     redirect_to movies_path
   end
-
 end
